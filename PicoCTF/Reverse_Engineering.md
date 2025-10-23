@@ -320,7 +320,7 @@ class VaultDoor3 {
 
 Below is the excel table I made:
 
-![This is the table I made](PicoCTF/assets/VaultDoor3_Table.jpeg)
+![This is the table I made](assets/VaultDoor3_Table.jpeg)
 
 ## Flag:
 
