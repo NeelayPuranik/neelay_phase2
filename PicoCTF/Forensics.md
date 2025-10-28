@@ -87,3 +87,59 @@ picoCTF{beep_boop_im_in_space}
 - [Online SSTV Decoder by Mathieu Renaud](https://sstv-decoder.mathieurenaud.fr/)
 
 ***
+
+
+# 3. tunn3l v1s10n
+
+> We found this [file](https://mercury.picoctf.net/static/7b2d7c26630e977197022d0af09e3aeb/tunn3l_v1s10n). Recover the flag.
+
+## Solution:
+
+- Initially, I tried running the linux command file on the given file to figure out what type of file it was but that lead no where
+- Therefore, I researched upon how to analyze the data inside files and figured out that one can use Hex Editors to do so.
+- I, then, downloaded a popular hex editor software called HxD and opened the file inside it
+- Below attached is the result I got:
+
+![Hxd Screenshot 1](assets/HxD_SC_1.jpeg)
+
+- After some research, I figured out that the given file is a BMP file. This is so because the rightmost column (Decoded text) starts with BM indicating that it is a BMP file.
+- I figured that since windows did not give me an option to open the file in photos, I had to change its extension to .bmp to so do but upon opening up the file in photos, it said that the app does not support this file format.
+- Upon taking a closer look, I realised that the BMP header is messed up as the column pairs "0A 0B" and "0E 0F" spelled BA D0 (BAD).
+- I figured out what those values should be replaced by, by comparing the BMP fileheader with other BMP fileheaders I obtained online.
+- This is the image I obtained upon doing so:
+
+![tunn3l v1s10n V1](assets/tunn3l_v1s10n%20-%201.bmp)
+
+- This led to a decoy flag being obtained
+- I noticed that the image seems to have been cropped out and also correlated that with the hint given that the image is not displaying right.
+- Therefore, I made several attempts at resizing the image until I finally figured out the correct resolution and obtained the flag
+- Below attached is the Image of the final Hex code of the BMP file:
+
+![HxD Screenshot 2](assets/HxD_SC_2.jpeg)
+
+- Below attached is the Image obtained after I correctly resized the picture:
+
+![tunn3l v1s10n V2](assets/tunn3l_v1s10n%20-%202.bmp)
+
+- Therefore, the flag obtained is: picoCTF{qu1t3_a_v13w_2020}
+
+## Flag:
+
+```
+picoCTF{qu1t3_a_v13w_2020}
+```
+
+## Concepts learnt:
+
+- Learnt how to analyze files at the hex level
+
+## Notes:
+
+- Nil
+
+## Resources:
+
+- [Understanding the BMP file format](https://www.donwalizerjr.com/understanding-bmp/)
+- [superuser - How to create a Bitmap image with "pen and paper"?](https://superuser.com/questions/1137140/how-to-create-a-bitmap-image-with-pen-and-paper)
+
+***
