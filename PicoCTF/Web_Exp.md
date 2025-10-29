@@ -48,7 +48,7 @@ picoCTF{y0u_m4d3_1t_79a0ddc6}
 - I tried changing the value of the cookie named "name" from -1 to 0 and this lead me to a different screen
 - I then changed the value from 0 to 1 and it again changed the name of the cookie from "snickerdoodle" to "chocolate chip"
 - I then incremented the value again and noticed that the cookie name keeps changing every time
-- Therefore, I kept incrementing the value until I reached the flag. (The value turned out to be 18)\
+- Therefore, I kept incrementing the value until I reached the flag. (The value turned out to be 18)
 
 ![The value needed to obtain the flag was 18](assets/Cookies.jpeg)
 
@@ -69,5 +69,51 @@ picoCTF{3v3ry1_l0v3s_c00k135_cc9110ba}
 ## Resources:
 
 - Nil
+
+***
+
+
+# 3. SSTI1
+
+> I made a cool website where you can announce whatever you want! Try it out!
+I heard templating is a cool and modular way to build web apps! Check out my website here!
+
+## Solution:
+
+- The hint for the challenge said server side template injection.
+- Sometimes, an application might treat user input as template code instead of plain text. This lets an attacker inject template expressions (like {{...}}) which the server can run. This allows the attacker to access sensitive data stored in the server and even execute malicious commands from there.
+- To test this out, I tried running "{{7*7}}" as told to do so on a site I found
+- I, then, found a command which will allow me to run linux commands on the server using: {{self._TemplateReference__context.cycler.__init__.__globals__.os.popen('<linux_command>').read() }}
+- Therefore, I ran "{{self._TemplateReference__context.cycler.__init__.__globals__.os.popen('ls').read() }}" to obtain the content stored on the server
+- I found a file there named flag.
+- Then, I ran "{{self._TemplateReference__context.cycler.__init__.__globals__.os.popen('cat flag').read() }}" to cat the contents of the file named flag and obtained the flag.
+- Below attached are the relevant images:
+
+![Using the ls command](assets/SSTI_ls.jpeg)
+
+![Output obtained from the ls command](assets/SSTI_ls_output.jpeg)
+
+![Using the "cat flag" command](assets/SSTI_cat_flag.jpeg)
+
+![Output obtained from the "cat flag" command](assets/SSTI_cat_flag_output.jpeg)
+
+## Flag:
+
+```
+picoCTF{s4rv3r_s1d3_t3mp14t3_1nj3ct10n5_4r3_c001_dcdca99a}
+```
+
+## Concepts learnt:
+
+- Learnt what is SSTI
+- Learnt how to use basic SST injections
+
+## Notes:
+
+- Nil
+
+## Resources:
+
+- [Abnormal - A Guide to Understanding Server-Side Template Injection](https://abnormal.ai/blog/server-side-template-injection)
 
 ***
