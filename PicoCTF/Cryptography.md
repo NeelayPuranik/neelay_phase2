@@ -155,3 +155,118 @@ picoCTF{custom_d2cr0pt6d_e4530597}
 - [sololearn - Python String question: What does [::-1] mean?](https://www.sololearn.com/en/Discuss/1838639/python-string-question-what-does-1-mean)
 
 ***
+
+
+# 3. rsa_challenge
+
+> Can you abuse the oracle?
+An attacker was able to intercept communications between a bank and a fintech company. They managed to get the message (ciphertext) and the password that was used to encrypt the message.
+After some intensive reconassainance they found out that the bank has an oracle that was used to encrypt the password and can be found here nc titan.picoctf.net 53208. Decrypt the password and use it to decrypt the message. The oracle can decrypt anything except the password.
+
+## Solution:
+
+- Since, this was a problem on RSA without being given the values of N and e. I figured that we had to make use of one of the known weaknesses of RSA encryption.
+- Therefore, I wrote a python script using pwntools to do so.
+- The script remotes into the picoctf connection and waits till the first messages incoming from the remote connection to end, i.e., the script waits until the word 'decrypt' is received.
+- Then, the script sends a payload: "E\n" to the server to indicate that encrypted is wanted to be done
+- It sends that payload and stores the received response into a variable called response
+- Then, the python scripts send the value of 2 as ASCII to obtain the encrypted value of 2
+- This gives us the value of 2^e and we multiply that with m^e which is basically the password
+- Then, the script moves onto the decryption part
+- The python scripts sends D for decryption and and then sends the value of "(2m)^e" to the server
+- The server decrypts it which gives us 2m
+- The script then divides the response by 2 to obtain m
+- Finally, it converts the values to hex, removes the 0x and then it converts them to ASCII and closes the connection
+- Below attached is the python script:
+
+```python
+from pwn import *
+
+connection = remote('titan.picoctf.net', 57529)
+
+# Get the first messages and send E to the program to choose Encryption
+response = connection.recvuntil('decrypt.')
+print(response.decode())
+payload = b'E' + b'\n'
+
+connection.send(payload)
+
+response = connection.recvuntil('keysize):')
+print(response.decode())
+
+# We want to encrypt the number 2 so we send the ASCII value of 2.
+payload = b'\x02' + b'\n'
+connection.send(payload)
+response = connection.recvuntil('ciphertext (m ^ e mod n)')
+response = connection.recvline()
+
+# We now have 2^e, we want to multiply by m^e which is the password
+num=int(response.decode()) * 1634668422544022562287275254811184478161245548888973650857381112077711852144181630709254123963471597994127621183174673720047559236204808750789430675058597
+
+# Decrypting process
+response = connection.recvuntil('decrypt.')
+print(response.decode())
+payload = b'D' + b'\n'
+connection.send(payload)
+
+#We decrypt 2^e*m^e or (2m)^e, which gives us 2m
+response = connection.recvuntil('decrypt:')
+print(response.decode())
+connection.send(str(num)+'\n')
+
+response = connection.recvuntil('hex (c ^ d mod n):')
+print(response.decode())
+response = connection.recvline()
+print(response.decode())
+
+# Now that we have the response, convert it from hexadecimal and then divide it by
+num=int(response,16)//2
+print(hex(num))
+
+# Now we convert this to ASCII
+hex_string=hex(num)[2:] # get rid of 0x
+byte_array=bytes.fromhex(hex_string)
+print(byte_array.decode('ascii'))
+
+connection.close()
+```
+
+- This gave me: 4955e
+- Then, I had to use the openssl command: "openssl enc -aes-256-cbc -d -in secret.enc -k 4955e"
+- This command line basically means that: use the openssl tool and the enc flag specifies that the user wants to use its symmetric encryption/decryption functions
+- The following flags: "-aes-256-cbc" tell the cipher algorithm to use the advanced encryption standard with a key size of 256 bits in cipher block chaining mode
+- The -d flag tells the algorithm to decrypt the contents
+- The argument "-in secret.enc" tells the algorithm to read the encrypted contents from secret.enc
+- The argument "-k 4955e" tells the algorithm to use "4955e" as the key
+- Below attached is the terminal output from this command being ran:
+
+```bash
+neelaypuranik@Neelays-Laptop:~$ openssl enc -aes-256-cbc -d -in secret.enc -k 4955e
+*** WARNING : deprecated key derivation used.
+Using -iter or -pbkdf2 would be better.
+picoCTF{su((3ss_(r@ck1ng_r3@_4955eb5d}neelaypuranik@Neelays-Laptop:~$
+```
+
+## Flag:
+
+```
+picoCTF{su((3ss_(r@ck1ng_r3@_4955eb5d}
+```
+
+## Concepts learnt:
+
+- Learnt how to exploit the weakness of the RSA cipher
+- Learnt how to write python scripts using pwntools to do desired tasks
+- Learnt how to use the openssl program
+
+## Notes:
+
+- Nil
+
+## Resources:
+
+- [RSA Encryption Algorithm Basics](https://youtu.be/hm8s6FAc4pg?si=EqiamOScxJK7jUEA)
+- [More basics on RSA](https://youtu.be/wcbH4t5SJpg?si=51G7J_WJNo7-09sV)
+- [Modular Exponentiation](https://youtu.be/xcr-eyOgnTA?si=jhUJdUOIN5pWkqrB)
+
+***
