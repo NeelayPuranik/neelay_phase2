@@ -75,3 +75,55 @@ FCSC{b1dee4eeadf6c4e60aeb142b0b486344e64b12b40d1046de95c89ba5e23a9925}
 ***
 
 
+# 3. bare-metal-alchemist
+
+> my friend recommended me this anime but i think i've heard a wrong name.
+
+## Solution:
+
+- I first used the command: "file firmware.elf" to figure out what type of file firmware.elf was.
+- It turned out to be an ELF executable file of the AVR 8-bit format
+- This is not an usual ELF executable like ARM/x86 but is the bare firmware used in embedded systems
+- I researched on which software is best fit to decompile such types of binaries and found out that radare is a really good software to utilize
+- I first opened the ELF in radare and navigated to the main function using "s main"
+- Then, I used the command "pdf" to print the full disassembly of the function
+- Upon going through the disassembled code, I figure out that the code is essentially performing an EOR operation (exlusive OR) on the data stored in the program memory and the constant stored in a register.
+- Tracing the register assignments up the chain revealed the constant to be "0xA5"
+- I concluded that the data in 0x68 is ciphertext since its bytes look random and non-printable
+- Therefore, I used the command "s 0x68" to move the pointer to that memory address
+- Then, I used the command px 100 to print the first 100 bytes stored in that and its following memory locations
+- Now, I knew the encrypted content and the key
+- Therefore, I used an online XOR decryptor to obtain the decrypted contents in hexadecimal
+- Finally, I used a hexadecimal to ASCII convertor to obtain the flag in a readable file format
+
+![Shifting to main and doing a full disassembly](assets/SC_bma_1.jpeg)
+![](assets/SC_bma_2.jpeg)
+![](assets/SC_bma_3.jpeg)
+![Shifting to 0x68 and printing a 100 bytes from there](assets/SC_bma_4.jpeg)
+![Decrypting the contents in 0x68 using the key 0xA5 through an XOR decryptor tool](assets/SC_bma_5.jpeg)
+
+## Flag:
+
+```
+TFCCTF{Th1s_1s_som3_s1mpl3_4rdu1no_f1rmw4re}
+```
+
+## Concepts learnt:
+
+- Learnt how to disassemble binaries
+- Learnt how to analyze the movement of data through registers
+
+## Notes:
+
+- Nil
+
+## Resources:
+
+- [Radare2 Tutorial 8 - Solving a CTF challenge](https://www.youtube.com/watch?v=BcjvRf6IAFA&list=PLg_QXA4bGHpvsW-qeoi3_yhiZg8zBzNwQ)
+- [geeksforgeeks - How to Use Radare2](https://www.geeksforgeeks.org/ethical-hacking/how-to-use-radare2/)
+- [XOR Encrypt and Decrypt](https://md5decrypt.net/en/Xor/)
+- [RapidTables - Hex to String Converter](https://www.rapidtables.com/convert/number/hex-to-ascii.html)
+
+
+***
+
