@@ -157,7 +157,7 @@ picoCTF{custom_d2cr0pt6d_e4530597}
 ***
 
 
-# 3. rsa_challenge
+# 3. rsa_oracle
 
 > Can you abuse the oracle?
 An attacker was able to intercept communications between a bank and a fintech company. They managed to get the message (ciphertext) and the password that was used to encrypt the message.
