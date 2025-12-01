@@ -8,7 +8,7 @@ Disassemble this.
 - I downloaded the file which was to be analyzed
 - I then used the command "file <file path>" to figure out what type of file it was
 - After figuring out that it was an ELF executable file, I used an online binary decompiler to decompile the machine code into something readable
-- Upon analyzing the main function, I found the value of the flax in hexadecimal
+- Upon analyzing the main function, I found the value of the flag in hexadecimal
 - I, then, converted the value to denary and got the flag.
 
 ```bash
