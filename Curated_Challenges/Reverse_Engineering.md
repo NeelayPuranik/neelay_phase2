@@ -397,7 +397,7 @@ f T
 
 - Therefore, the flag obtained is KCTF{NjkSfTYaIi}
 
-![Program output when the input satisfies all conditions](<Challenge Assets/worthy.knight/worthy.knight.png>)
+![Program output when the input satisfies all conditions](<assets/worthy.knight.png>)
 
 ## Flag
 
@@ -1125,7 +1125,7 @@ sources/byuctf/downwiththefrench/R.java-        /* JADX INFO: Added by JADX */
 - Therefore, it seems that the true order of the characters is not determined by the order in which they are written in the XML file but instead by how the TextView elements are arranged on screen in the actual Android layout
 - Opening the ```activity_main.xml``` file in Android Studio gives:
 
-![Screenshot of said file opened in Android Studio](<Challenge Assets\VeridisQuo\main_layout_android_studio.png>)
+![Screenshot of said file opened in Android Studio](<assets/main_layout_android_studio.png>)
 
 - This gives the correct order of characters as:
 
