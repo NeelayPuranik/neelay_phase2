@@ -397,7 +397,7 @@ f T
 
 - Therefore, the flag obtained is KCTF{NjkSfTYaIi}
 
-![Program output when the input satisfies all conditions](<assets/worthy.knight.png>)
+![Program output when the input satisfies all conditions](<assets/worthy.knight/worthy.knight.png>)
 
 ## Flag
 
@@ -1125,7 +1125,7 @@ sources/byuctf/downwiththefrench/R.java-        /* JADX INFO: Added by JADX */
 - Therefore, it seems that the true order of the characters is not determined by the order in which they are written in the XML file but instead by how the TextView elements are arranged on screen in the actual Android layout
 - Opening the ```activity_main.xml``` file in Android Studio gives:
 
-![Screenshot of said file opened in Android Studio](<assets/main_layout_android_studio.png>)
+![Screenshot of said file opened in Android Studio](<assets/VeridisQuo/main_layout_android_studio.png>)
 
 - This gives the correct order of characters as:
 
@@ -1559,3 +1559,579 @@ DawgCTF{FR33_C4R_W45H!}
 - [RapidTables - Hex to Denary converter](https://www.rapidtables.com/convert/number/hex-to-decimal.html)
 - [PwnDBG](https://pwndbg.re/stable/features/)
 - [x64 Cheat Sheet](https://cs.brown.edu/courses/cs033/docs/guides/x64_cheatsheet.pdf)
+
+
+## B) Intermediate
+
+> This challenge contains a single file named "dust_intermediate"
+
+## Solution
+
+- I downloaded the file and inspected it. It was a Rust-compiled 64-bit ELF binary, similar to the earlier ```Dusty – Noob``` challenge
+- I ran the binary in WSL and it prompted me for input, I entered some random value
+
+```bash
+neelay@Neelays-Laptop:~/Repos/neelay_phase2/Curated_Challenges/assets$ ./dust_intermediate
+Enter your challenge phrase bellow:
+flag
+Loser! Try again?
+neelay@Neelays-Laptop:~/Repos/neelay_phase2/Curated_Challenges/assets$
+```
+
+- This lead nowhere so I opened up the binary in Ghidra for further analysis
+- I navigated to the main function, named ```shinyclean2::main()```
+- I found out that the program uses the Rust's standard library ```std::sync::mpsc``` to create two channels, let them be A and B
+- This program uses multi-threading which is why it needs these channels
+- Channel A: Main thread -> Worker thread
+- Channel B: Worker thread -> Main thread
+- Then, the program reads a line of input from the user using ```stdin().read_line()```
+- Then, the program creates a new worker thread and passes both channels to it
+- It sends each input byte to the worker thread through channel A (after all bytes are sent, a terminating 0 is sent to signal end of data)
+- It waits till the worker thread has completed its operations
+- Then, it recevies the bytes sent over by the worker thread over channel B
+- It compares the bytes received from the worker thread against a hardcoded sequence of bytes
+- If all 21 bytes match then it outputs: ```You win!```
+- Otherwise, it outputs: ```Loser! Try again?```
+
+- Therefore, this entire challenge is about reverse the operations performed by the worker thread and applying those reversed operations on the hardcoded sequence so that we can obtain the input the program wants
+
+- The following sequence of bytes are the hardcoded bytes:
+
+```arduino
+-0x16, -0x27, '1', '"', -0x2d, -0x1a, -0x69, 'p',
+0x16, -0x5e, -0x58, 0x1b, 'a', -4, 'v', 'h',
+'{', -0x55, -0x48, '\'', 0x96
+```
+
+- I have attached the decompiled version (by Ghidra) of the worker function below:
+
+```c
+/* shinyclean2::a */
+
+void __rustcall
+shinyclean2::a(undefined8 param_1,undefined8 param_2,undefined8 param_3,undefined8 param_4)
+
+{
+  code *pcVar1;
+  byte bVar2;
+  int iVar3;
+  ulong uVar4;
+  char extraout_DL;
+  undefined1 extraout_DL_00;
+  undefined8 local_148;
+  undefined8 local_140;
+  undefined8 local_138;
+  undefined8 local_130;
+  byte local_121;
+  int local_120;
+  byte local_11c;
+  char local_11b;
+  byte local_11a;
+  undefined1 local_119;
+  undefined1 local_118 [279];
+  char local_1;
+
+  local_121 = 0x75;
+  local_120 = 0;
+  local_148 = param_1;
+  local_140 = param_2;
+  local_138 = param_3;
+  local_130 = param_4;
+  do {
+                    /* try { // try from 0010d268 to 0010d271 has its CatchHandler @ 0010d28b */
+    local_11c = std::sync::mpsc::Receiver<T>::recv(&local_148);
+    local_11c = local_11c & 1;
+    local_11b = extraout_DL;
+    if (local_11c != 0) {
+LAB_0010d2d8:
+                    /* try { // try from 0010d2d8 to 0010d2f0 has its CatchHandler @ 0010d3d8 */
+      core::ptr::drop_in_place<>(&local_138);
+      core::ptr::drop_in_place<>(&local_148);
+      return;
+    }
+    bVar2 = local_11a;
+    local_1 = extraout_DL;
+    if (extraout_DL == '\0') break;
+                    /* try { // try from 0010d2f6 to 0010d306 has its CatchHandler @ 0010d28b */
+    _<>::add_assign(&local_121,extraout_DL);
+    memcpy(local_118,&DAT_00161298,0x100);
+    uVar4 = (ulong)local_121;
+    if (0xff < uVar4) {
+                    /* WARNING: Subroutine does not return */
+      core::panicking::panic_bounds_check(uVar4,0x100,&PTR_DAT_00175ab8);
+    }
+                    /* try { // try from 0010d33b to 0010d3c9 has its CatchHandler @ 0010d28b */
+    local_11a = std::sync::mpsc::Sender<T>::send(&local_138,local_118[uVar4]);
+    local_11a = local_11a & 1;
+    local_119 = extraout_DL_00;
+    if (local_11a != 0) goto LAB_0010d2d8;
+    iVar3 = local_120 + 1;
+    if (SCARRY4(local_120,1)) {
+      core::panicking::panic_const::panic_const_add_overflow(&PTR_DAT_00175ad0);
+                    /* WARNING: Does not return */
+      pcVar1 = (code *)invalidInstructionException();
+      (*pcVar1)();
+    }
+    local_120 = iVar3;
+    bVar2 = 0;
+  } while (iVar3 != 0x15);
+  local_11a = bVar2;
+  core::ptr::drop_in_place<>(&local_138);
+  core::ptr::drop_in_place<>(&local_148);
+  return;
+}
+```
+
+- The worker function initializes two variables:
+
+```c
+local_121 = 0x75;
+local_120 = 0;
+```
+
+- Then, the function creates a loop which runs until all the 21 bytes are processed
+- Inside the loop, for each iteration the variable ```local_11b``` receives a byte sent from the main function through channel A
+- Then the received byte is stored in a variable named ```extraout_DL```
+- If the received byte is 0 then the loop breaks
+
+```c
+if (extraout_DL == '\0') break;
+```
+
+- While the received byte non-zero, the bytes are added to an accumulater initialized earlier (```local_121 = 0x75```)
+
+```c
+add_assign(&local_121, extraout_DL);
+```
+
+- This essentially means:
+
+```c
+acc = acc + input_byte   (mod 256)
+```
+
+- Then the function loads a table into its memory
+
+```c
+memcpy(local_118, &DAT_00161298, 0x100);
+```
+
+- ```DAT_00161298``` is the 256-byte transform table
+- It then performs a bound check and then performs a loopup upon the table
+
+```c
+uVar4 = (ulong)local_121;
+if (uVar4 >= 0x100) panic;
+```
+
+then,
+
+```c
+local_11a = Sender::send(&local_138, local_118[uVar4]);
+```
+
+- Essentially the worker sends back
+
+```c
+output = table[acc]
+```
+
+- Then the worker increments the counter by 1 and breaks the loop if the counter is equal to 0x15 (21 in denary)
+
+- Therefore, to solve the challenge we must reverse this transformation
+
+- The simplified logic of the transformation is:
+
+```lua
+accumulator = 0x75
+
+for each byte b of input:
+    acc = (acc + b) & 0xFF
+    out = table[acc]
+```
+
+- Therefore, the transformations will look like:
+
+```c
+acc_0 = (0x75 + in[0]) & 0xFF
+acc_1 = (acc_0 + in[1]) & 0xFF
+acc_2 = (acc_1 + in[2]) & 0xFF
+.
+.
+.
+```
+
+- Therfore, an ```i``` must be found such that
+
+```c
+table[acc_i] = target[i]
+```
+
+- To do so, the following steps can be followed:
+  * Find all indices where
+  ```c
+  table[j] == target[i]
+  ```
+  * The accumulator must equal that index:
+  ```c
+  acc = j
+  ```
+  * Therefore,
+  ```c
+  in[i] = (j - previous_acc) & 0xFF
+  ```
+  * Update,
+  ```c
+  previous_acc = j
+  ```
+
+- Doing this manually would be too time consuming so a python script can be used to automate the process
+
+- The following is the python script used to obtain the flag:
+
+```python
+table = [
+0x9f,0xd2,0xd6,0xa8,0x99,0x76,0xb8,0x75,0xe2,0x0e,0x50,0x67,0xc9,0x3a,0xa0,0xb5,
+0x15,0xee,0x59,0xbe,0x7d,0xa3,0xfb,0x51,0xdf,0x7c,0xd9,0x0d,0xe7,0x2d,0xad,0x28,
+0xed,0xdc,0x3d,0x14,0x13,0x79,0xaf,0x27,0xd1,0xd5,0xa1,0xf9,0x37,0xc0,0xef,0x25,
+0x38,0x77,0xff,0x1b,0x40,0x60,0x8f,0x45,0x6f,0x08,0x6d,0xd3,0x35,0x3f,0xb4,0x2f,
+0xd7,0x34,0x5f,0x05,0xbb,0x11,0x3e,0x84,0x5b,0x00,0xf5,0x29,0x36,0x2c,0x63,0x2b,
+0x70,0x68,0x02,0xae,0xc4,0x95,0x10,0x89,0xb0,0x2e,0x55,0xcc,0xbc,0x80,0xa6,0xf3,
+0xd8,0x5a,0x62,0x61,0x9a,0xa5,0xfe,0x3c,0xb2,0x7e,0xbf,0xa7,0xeb,0x41,0x7a,0xfa,
+0x53,0x47,0xdd,0x6b,0x54,0x65,0x9d,0x0b,0x73,0x94,0x81,0x1d,0x4c,0xac,0x46,0xde,
+0x43,0x9c,0xfd,0x7f,0x6a,0x7b,0x07,0x01,0xf7,0xe5,0xb3,0xcd,0x1f,0xc7,0x58,0xe6,
+0x4d,0x31,0x4a,0xd0,0x98,0x93,0x20,0xc5,0x1e,0x6c,0x8c,0x09,0x78,0xbd,0x03,0x23,
+0x82,0xdb,0x12,0x16,0x96,0xc8,0xce,0xf4,0xe0,0xa4,0x04,0xca,0x49,0x87,0xc2,0x32,
+0x6e,0xf1,0x39,0x1c,0x85,0x5e,0x92,0xf8,0xab,0xea,0x8d,0xc1,0x86,0x17,0x8a,0xb1,
+0xf2,0x4f,0xfc,0xe1,0xcb,0xb6,0x42,0xba,0xa9,0x88,0x66,0x4e,0x18,0xf6,0x64,0xaa,
+0x2a,0x8b,0xf0,0xa2,0xec,0x97,0x5c,0xe3,0xcf,0x91,0x0c,0x1a,0x30,0x5d,0x69,0x56,
+0xe4,0x9b,0x0f,0x90,0xc6,0x72,0x48,0x06,0x33,0x9e,0x0a,0x83,0x8e,0x52,0x19,0xe8,
+0x44,0xda,0x26,0xd4,0x3b,0x4b,0x74,0x24,0x22,0xb7,0xc3,0x21,0xe9,0xb9,0x71,0x57
+]
+
+target = [
+0xEA,0xD9,0x31,0x22,0xD3,0xE6,0x97,0x70,
+0x16,0xA2,0xA8,0x1B,0x61,0xFC,0x76,0x68,
+0x7B,0xAB,0xB8,0x27,0x96
+]
+
+rev = {}
+for i, v in enumerate(table):
+    if v not in rev:
+        rev[v] = []
+    rev[v].append(i)
+
+acc = 0x75
+inp = []
+
+for t in target:
+    j = rev[t][0]
+    b = (j - acc) & 0xff
+    inp.append(b)
+    acc = (acc + b) & 0xff
+
+print(bytes(inp))
+```
+
+- The following is the output obtained from the program running
+
+```text
+neelay@Neelays-Laptop:~/Repos/neelay_phase2/Curated_Challenges$ python3 dust_intermediate_solver.py
+b'DawgCTF{S0000_CL43N!}'
+neelay@Neelays-Laptop:~/Repos/neelay_phase2/Curated_Challenges$
+```
+
+- Therefore, the flag is:
+
+```
+DawgCTF{S0000_CL43N!}
+```
+
+## Flag
+
+```
+DawgCTF{S0000_CL43N!}
+```
+
+## Concepts learnt
+
+- Learnt how Rust channels work for multi-threading
+- Learnt how to track data flow between different branches of a program
+- Learnt how look-up table encryptions work and how to reverse them
+
+## Notes
+
+- Rust binaries include a lot of auto-generated panic-handling and formatting code, which makes the decompiled code appear cluttered and more complex than it actually is
+
+## Resources
+
+- [Channels](https://doc.rust-lang.org/rust-by-example/std_misc/channels.html)
+- [Lookup table](https://www.wikiwand.com/en/articles/Lookup_table)
+
+
+## C) Pro
+
+> This challenge contains a single file named "dust_pro"
+
+## Solution
+
+- I downloaded the file ```dust_pro``` and inspected it using the file command. As expected, it was a Rust-compiled 64-bit PIE ELF binary similar to earlier Dusty challenges
+
+- Running the binary simply showed a prompt:
+
+```
+Enter your ShinyClean™ code below:
+```
+
+- Non-numeric input resulted in ```Invalid Int!```
+- Numeric but incorrect input resulted in ```Sorry, better luck next time!```
+
+- This meant that the program probably applied some transformations on the input and compared it against a set value to determine if the input was correct or incorrect
+
+- I loaded the binary into Ghidra for further analysis
+- I navigated to the main function
+
+```c
+/* shinyclean2::main */
+
+void __rustcall shinyclean2::main(void)
+
+{
+  byte bVar1;
+  undefined4 uVar2;
+  ulong uVar3;
+  ulong uVar4;
+  undefined1 auVar5 [16];
+  undefined *local_1c8;
+  undefined8 local_1c0;
+  byte local_1b1 [73];
+  undefined1 local_168 [24];
+  undefined8 local_150;
+  undefined4 local_144;
+  undefined8 local_140;
+  undefined1 local_138 [16];
+  undefined1 local_128 [16];
+  undefined1 local_118 [24];
+  undefined1 local_100 [16];
+  undefined1 local_f0 [24];
+  undefined1 local_d8 [48];
+  undefined8 local_a8;
+  undefined4 uStack_a0;
+  undefined4 uStack_9c;
+  undefined1 *local_98;
+  code *pcStack_90;
+  undefined1 local_88 [64];
+  undefined8 local_48;
+  undefined8 local_40;
+  undefined4 local_34;
+  ulong local_30;
+  undefined1 *local_28;
+  code *local_20;
+  undefined1 *local_18;
+  code *local_10;
+  undefined1 *local_8;
+
+  local_1c8 = &DAT_0015b134;
+  local_1c0 = 0x40;
+  local_1b1[0] = 0xcf;
+  local_1b1[1] = 9;
+  local_1b1[2] = 0x1e;
+  local_1b1[3] = 0xb3;
+  local_1b1[4] = 200;
+  local_1b1[5] = 0x3c;
+  local_1b1[6] = 0x2f;
+  local_1b1[7] = 0xaf;
+  local_1b1[8] = 0xbf;
+  local_1b1[9] = 0x24;
+  local_1b1[10] = 0x25;
+  local_1b1[0xb] = 0x8b;
+  local_1b1[0xc] = 0xd9;
+  local_1b1[0xd] = 0x3d;
+  local_1b1[0xe] = 0x5c;
+  local_1b1[0xf] = 0xe3;
+  local_1b1[0x10] = 0xd4;
+  local_1b1[0x11] = 0x26;
+  local_1b1[0x12] = 0x59;
+  local_1b1[0x13] = 0x8b;
+  local_1b1[0x14] = 200;
+  local_1b1[0x15] = 0x5c;
+  local_1b1[0x16] = 0x3b;
+  local_1b1[0x17] = 0xf5;
+  local_1b1[0x18] = 0xf6;
+  core::fmt::Arguments::new_const(local_1b1 + 0x19,&PTR_DAT_0016e870);
+  std::io::stdio::_print(local_1b1 + 0x19);
+  alloc::string::String::new(local_168);
+                    /* try { // try from 00109728 to 00109730 has its CatchHandler @ 00109751 */
+  local_150 = std::io::stdio::stdin();
+                    /* try { // try from 00109777 to 0010991f has its CatchHandler @ 00109751 */
+  auVar5 = std::io::stdio::Stdin::read_line(&local_150,local_168);
+  core::result::Result<T,E>::expect
+            (auVar5._0_8_,auVar5._8_8_,"Failed to read line",0x13,&PTR_s_src/main.rs_0016e880);
+  auVar5 = _<>::deref(local_168);
+  auVar5 = core::str::_<impl_str>::trim(auVar5._0_8_,auVar5._8_8_);
+  local_140 = core::str::_<impl_str>::parse(auVar5._0_8_,auVar5._8_8_);
+  local_48 = local_140;
+  local_40 = local_140;
+  uVar2 = core::result::Result<T,E>::expect
+                    (local_140,"Invalid int!",0xc,&PTR_s_src/main.rs_0016e898);
+  local_144 = core::num::_<impl_u32>::to_ne_bytes(uVar2);
+  local_34 = local_144;
+  local_138 = _<>::into_iter(0,0x19);
+  while( true ) {
+    auVar5 = core::iter::range::_<>::next(local_138);
+    uVar4 = auVar5._8_8_;
+    local_128 = auVar5;
+    if (auVar5._0_8_ == 0) {
+      sha256::digest(local_118,local_1b1);
+                    /* try { // try from 0010993c to 00109950 has its CatchHandler @ 0010996d */
+      bVar1 = _<>::eq(local_118,&local_1c8);
+      if ((bVar1 & 1) == 0) {
+                    /* try { // try from 0010998d to 001099d7 has its CatchHandler @ 0010996d */
+        core::fmt::Arguments::new_const(local_88,&PTR_s_Sorry,_better_luck_next_time!_0016e8b0) ;
+        std::io::stdio::_print(local_88);
+      }
+      else {
+        core::str::converts::from_utf8(local_f0,local_1b1,0x19);
+                    /* try { // try from 001099f2 to 00109ae8 has its CatchHandler @ 0010996d */
+        local_100 = core::result::Result<T,E>::expect
+                              (local_f0,"Failed to Parse",0xf,&PTR_s_src/main.rs_0016e8c0);
+        local_18 = local_100;
+        local_10 = _<>::fmt;
+        local_8 = local_100;
+        local_98 = local_100;
+        local_20 = _<>::fmt;
+        pcStack_90 = _<>::fmt;
+        uStack_a0 = 0x109e20;
+        uStack_9c = 0;
+        local_28 = local_98;
+        local_a8 = local_98;
+        core::fmt::Arguments::new_v1(local_d8,&PTR_s_Congratulations!_You_win_a_0016e8d8,&local _a8);
+        std::io::stdio::_print(local_d8);
+      }
+                    /* try { // try from 001099dc to 001099ec has its CatchHandler @ 00109751 */
+      core::ptr::drop_in_place<>(local_118);
+      core::ptr::drop_in_place<>(local_168);
+      return;
+    }
+    local_30 = uVar4;
+    uVar3 = uVar4 & 3;
+    if (3 < uVar3) break;
+    if (0x18 < uVar4) {
+                    /* WARNING: Subroutine does not return */
+      core::panicking::panic_bounds_check(uVar4,0x19,&PTR_s_src/main.rs_0016e910);
+    }
+    local_1b1[uVar4] = *(byte *)((long)&local_144 + uVar3) ^ local_1b1[uVar4];
+  }
+                    /* try { // try from 00109b40 to 00109b93 has its CatchHandler @ 00109751 */
+                    /* WARNING: Subroutine does not return */
+  core::panicking::panic_bounds_check(uVar3,4,&PTR_s_src/main.rs_0016e8f8);
+}
+```
+
+- The main function shows a hardcoded 25-byte array
+
+```c
+  local_1b1[0] = 0xcf;
+  local_1b1[1] = 9;
+  local_1b1[2] = 0x1e;
+  local_1b1[3] = 0xb3;
+  local_1b1[4] = 200;
+  local_1b1[5] = 0x3c;
+  local_1b1[6] = 0x2f;
+  local_1b1[7] = 0xaf;
+  local_1b1[8] = 0xbf;
+  local_1b1[9] = 0x24;
+  local_1b1[10] = 0x25;
+  local_1b1[0xb] = 0x8b;
+  local_1b1[0xc] = 0xd9;
+  local_1b1[0xd] = 0x3d;
+  local_1b1[0xe] = 0x5c;
+  local_1b1[0xf] = 0xe3;
+  local_1b1[0x10] = 0xd4;
+  local_1b1[0x11] = 0x26;
+  local_1b1[0x12] = 0x59;
+  local_1b1[0x13] = 0x8b;
+  local_1b1[0x14] = 200;
+  local_1b1[0x15] = 0x5c;
+  local_1b1[0x16] = 0x3b;
+  local_1b1[0x17] = 0xf5;
+  local_1b1[0x18] = 0xf6;
+  ```
+
+- The program then converts the input into 4 raw bytes (little - endian)
+- Then it performs an XOR loop over all 25 bytes of the above mentioned array
+
+```c
+local_1b1[i] ^= key_bytes[i % 4];
+```
+
+- After this, the program computes the SHA-256 of the array
+
+```c
+sha256::digest(local_118, local_1b1);
+```
+
+- This is then compared to a stored ASCII hex string
+
+```c
+if (digest == stored_hash) { print_flag(); }
+```
+
+- The program only prints the decoded bytes if SHA-256(buffer_after_XOR) matches the stored hash
+
+- Since XOR is reversible, the key bytes can be recovered if we know just a portion of the plaintext the program expects after XOR'ing
+- From the previous dusty challenges, the flag format was ```dawgCTF{...}```
+- Therefore, we know the first 4 bytes of the decoded string
+- The first four bytes of the constant (stored ASCII) array are:
+
+```
+0xcf, 0x09, 0x1e, 0xb3
+```
+
+- Therefore, the XOR key is:
+
+```
+8b 68 69 d4
+```
+
+- Converting the above key into little endian gives
+
+```
+3563677835
+```
+
+- Inputting this integer into the program gives us the flag
+
+```bash
+neelay@Neelays-Laptop:~$ ./dust_pro
+Enter your ShinyClean™ code below:
+3563677835
+Congratulations! You win a DawgCTF{4LL_RU57_N0_C4R!}
+neelay@Neelays-Laptop:~$
+```
+
+- Therefore, the flag is
+
+```
+DawgCTF{4LL_RU57_N0_C4R!}
+```
+
+## Flag
+
+```
+DawgCTF{4LL_RU57_N0_C4R!}
+```
+
+## Concepts learnt
+
+- Learnt how to find out the XOR key if a bit of the plaintext is known
+- Learnt about the SHA-256 technique
+
+## Notes
+
+- If the key is shorter than the text to be encrypted (using XOR) then find the key is really easy if we know even a short part of the plaintext
+
+## Resources
+
+- [XOR cipher](https://www.wikiwand.com/en/articles/XOR_cipher)
+- [to_ne_bytes()](https://doc.rust-lang.org/std/primitive.u32.html#method.to_ne_bytes)
